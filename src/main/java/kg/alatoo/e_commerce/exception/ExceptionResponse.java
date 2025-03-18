@@ -1,4 +1,4 @@
-package kg.alatoo.eCommerce.exception;
+package kg.alatoo.e_commerce.exception;
 
 import lombok.Getter;
 import lombok.Setter;

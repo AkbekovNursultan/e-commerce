@@ -9,25 +9,34 @@ public class EnumListValidator implements ConstraintValidator<ValidEnumList, Lis
 
     @Override
     public void initialize(ValidEnumList constraintAnnotation) {
-        enumClass = constraintAnnotation.enumClass();
+        this.enumClass = constraintAnnotation.enumClass();
     }
 
     @Override
     public boolean isValid(List<String> enumValues, ConstraintValidatorContext context) {
         if (enumValues == null || enumValues.isEmpty()) {
-            return true; // Null or empty lists are considered valid (you can adjust this behavior)
+            return true;
         }
 
         for (String value : enumValues) {
-            try {
-                // Validate each value against the enum class
-                Enum.valueOf(enumClass, value.toUpperCase()); // case-insensitive comparison
-            } catch (IllegalArgumentException e) {
-                return false; // Invalid enum value found
+            if (!isValidEnumValue(value)) {
+                return false;
             }
         }
+        return true;
+    }
 
-        return true; // All values are valid
+    private boolean isValidEnumValue(String value) {
+        try {
+            Enum<?>[] enumConstants = enumClass.getEnumConstants();
+            for (Enum<?> enumConstant : enumConstants) {
+                if (enumConstant.name().equalsIgnoreCase(value)) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return false;
     }
 }
-

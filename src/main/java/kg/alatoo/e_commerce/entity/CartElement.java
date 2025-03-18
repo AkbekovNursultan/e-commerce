@@ -18,8 +18,8 @@ public class CartElement {
     private Long id;
     private String title;
     private Integer quantity;
-    private Integer price;
-    private Integer total;
+    private Double price;
+    private Double total;
     @ManyToOne(cascade = CascadeType.ALL)
     private Purchase purchase;
     @ManyToOne(cascade = CascadeType.ALL)

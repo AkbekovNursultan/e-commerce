@@ -22,6 +22,6 @@ public class Category {
     private Long id;
     private String name;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.REMOVE)
     private List<Product> products;
 }

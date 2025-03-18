@@ -21,6 +21,7 @@ import kg.alatoo.e_commerce.service.ProductService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,7 @@ public class ProductServiceImpl implements ProductService {
     private final ProductMapper productMapper;
     private final CartRepository cartRepository;
 
+    @Transactional
     @Override
     public void addNewProduct(ProductRequest productRequest, String token) {
         User user = authService.getUserFromToken(token);
@@ -66,11 +68,12 @@ public class ProductServiceImpl implements ProductService {
 
         product.setQuantity(Math.max(productRequest.getQuantity(), 0));
         product.setCategory(category);
-
+        categoryRepository.save(product.getCategory());
         category.getProducts().add(product);
-        categoryRepository.save(category);
+        productRepository.save(product);
     }
 
+    @Transactional
     @Override
     public void addNewCategory(String token, CategoryRequest categoryRequest) {
         User user = authService.getUserFromToken(token);
@@ -87,6 +90,7 @@ public class ProductServiceImpl implements ProductService {
         categoryRepository.save(category);
     }
 
+    @Transactional
     @Override
     public void update(String token, Long productId, ProductRequest request) {
         User user = authService.getUserFromToken(token);
@@ -146,6 +150,7 @@ public class ProductServiceImpl implements ProductService {
         return productMapper.toDetailDto(product);
     }
 
+    @Transactional
     @Override
     public void deleteProduct(String token, Long productId) {
         User user = authService.getUserFromToken(token);
@@ -156,12 +161,14 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new NotFoundException("Product with ID " + productId + " not found!", HttpStatus.NOT_FOUND));
 
-        List<Cart> cartsWithProduct = cartRepository.findAllByProductsContaining(product);
-        for (Cart cart : cartsWithProduct) {
-            cart.getProductsList().remove(product);
-            cartRepository.save(cart);
-        }
-
+//        List<Cart> cartsWithProduct = cartRepository.findAllByProductsListContaining(product);
+//        for (Cart cart : cartsWithProduct) {
+//            cart.getProductsList().remove(product);
+//            cartRepository.save(cart);
+//        }
+        product.getCategory().getProducts().remove(product);
+        product.setCategory(null);
+        categoryRepository.save(product.getCategory());
         productRepository.delete(product);
     }
 

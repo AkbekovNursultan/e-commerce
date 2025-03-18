@@ -1,4 +1,4 @@
-package kg.alatoo.eCommerce.exception;
+package kg.alatoo.e_commerce.exception;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -21,9 +21,9 @@ public class GlobalExceptionHandler {
                 e.getMessage());
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
+    @ExceptionHandler(CustomBadCredentialsException.class)
     @ResponseStatus(HttpStatus.FORBIDDEN)
-    public ExceptionResponse handlerNotFoundException(BadCredentialsException e) {
+    public ExceptionResponse handlerNotFoundException(CustomBadCredentialsException e) {
 
         return new ExceptionResponse(
                 HttpStatus.FORBIDDEN,

@@ -6,24 +6,32 @@ import kg.alatoo.e_commerce.dto.user.UserLoginResponse;
 import kg.alatoo.e_commerce.dto.user.UserRegisterRequest;
 import kg.alatoo.e_commerce.entity.Cart;
 import kg.alatoo.e_commerce.entity.Customer;
-import kg.alatoo.e_commerce.entity.OrderHistory;
+//import kg.alatoo.e_commerce.entity.OrderHistory;
 import kg.alatoo.e_commerce.entity.User;
 import kg.alatoo.e_commerce.entity.Worker;
 import kg.alatoo.e_commerce.enums.Role;
+import kg.alatoo.e_commerce.exception.CustomBadCredentialsException;
 import kg.alatoo.e_commerce.exception.BadRequestException;
 import kg.alatoo.e_commerce.repository.CustomerRepository;
 import kg.alatoo.e_commerce.repository.UserRepository;
 import kg.alatoo.e_commerce.repository.WorkerRepository;
 import kg.alatoo.e_commerce.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import net.minidev.json.JSONObject;
+import net.minidev.json.parser.JSONParser;
+import net.minidev.json.parser.ParseException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +57,7 @@ public class AuthServiceImpl implements AuthService {
         user.setUsername(userRegisterRequest.getUsername());
         user.setPassword(passwordEncoder.encode(userRegisterRequest.getPassword()));
         user.setRole(Role.valueOf(userRegisterRequest.getRole().toUpperCase()));
+        user.setEmail(userRegisterRequest.getEmail());
 
         if (user.getRole() == Role.CUSTOMER) {
             Customer customer = new Customer();
@@ -63,9 +72,9 @@ public class AuthServiceImpl implements AuthService {
             customer.setFavoritesList(new ArrayList<>());
 
             Cart cart = new Cart();
-            OrderHistory orderHistory = new OrderHistory();
-            cart.setOrderHistory(orderHistory);
-            orderHistory.setCart(cart);
+ //           OrderHistory orderHistory = new OrderHistory();
+ //           cart.setOrderHistory(orderHistory);
+ //           orderHistory.setCart(cart);
             customer.setCart(cart);
 
             user.setCustomer(customer);
@@ -84,35 +93,54 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserLoginResponse login(UserLoginRequest userLoginRequest) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        userLoginRequest.getUsername(), userLoginRequest.getPassword()
-                )
-        );
-
         User user = userRepository.findByUsername(userLoginRequest.getUsername())
-                .orElseThrow(() -> new BadRequestException("User not found."));
+                .orElseThrow(() -> new CustomBadCredentialsException("Invalid username or password."));
+
+        try {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userLoginRequest.getUsername(),userLoginRequest.getPassword()));
+
+        }catch (org.springframework.security.authentication.BadCredentialsException e){
+            throw new CustomBadCredentialsException("Invalid username or password.");
+        }
 
         return convertToResponse(user);
     }
 
+
     @Override
-    public User getUserFromToken(String token) {
-        String username = jwtService.extractUsername(token);
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found."));
+    public User getUserFromToken(String token){
+
+        String[] chunks = token.substring(7).split("\\.");
+        Base64.Decoder decoder = Base64.getUrlDecoder();
+
+        JSONParser jsonParser = new JSONParser();
+        JSONObject object = null;
+        try {
+            object = (JSONObject) jsonParser.parse(decoder.decode(chunks[1]));
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+        return userRepository.findByUsername(String.valueOf(object.get("sub"))).orElseThrow(() -> new RuntimeException("user can be null"));
     }
 
     private UserLoginResponse convertToResponse(User user) {
-        UserLoginResponse response = new UserLoginResponse();
-        String jwtToken = jwtService.generateToken(new HashMap<>(), user);
-        response.setToken(jwtToken);
-        return response;
+        UserLoginResponse loginResponse = new UserLoginResponse();
+
+        Map<String, Object> extraClaims = new HashMap<>();
+
+        String token = jwtService.generateToken(extraClaims, user);
+        loginResponse.setToken(token);
+
+        return loginResponse;
     }
 
-    private boolean containsRole(String possibleRole) {
-        return Arrays.stream(Role.values())
-                .anyMatch(role -> role.name().equalsIgnoreCase(possibleRole));
+    private boolean containsRole(String role1) {
+        for (Role role:Role.values()){
+            if (role.name().equalsIgnoreCase(role1))
+                return true;
+        }
+        return false;
     }
 }
+
 

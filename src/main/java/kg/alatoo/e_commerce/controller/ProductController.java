@@ -68,9 +68,10 @@ public class ProductController {
     }
 
     @DeleteMapping("/{productId}")
-    public void deleteProduct(@RequestHeader("Authorization") String token, @PathVariable Long productId) {
+    public ResponseEntity<String> deleteProduct(@RequestHeader("Authorization") String token, @PathVariable Long productId) {
         try {
             productService.deleteProduct(token, productId);
+            return ResponseEntity.ok("Product deleted successfully.");
         } catch (BadRequestException e) {
             throw new BadRequestException("Failed to delete product: " + e.getMessage());
         } catch (NotFoundException e) {

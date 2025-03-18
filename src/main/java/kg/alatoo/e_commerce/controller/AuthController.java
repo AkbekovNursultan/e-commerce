@@ -25,7 +25,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body("User added successfully!");
     }
 
-    @PostMapping("/login") // Change to POST
+    @PostMapping("/login")
     public ResponseEntity<UserLoginResponse> login(@Valid @RequestBody UserLoginRequest userLoginRequest) {
         return ResponseEntity.ok(authService.login(userLoginRequest));
     }

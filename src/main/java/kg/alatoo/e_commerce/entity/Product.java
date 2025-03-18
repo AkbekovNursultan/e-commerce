@@ -50,6 +50,7 @@ public class Product {
     private String code;
 
     @ManyToOne
+    @JoinColumn(name = "category_id")
     private Category category;
 
     @ManyToOne

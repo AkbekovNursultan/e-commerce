@@ -16,7 +16,7 @@ public class Purchase {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Integer price;
+    private Double price;
     private String date;
 
     @ManyToOne(cascade = CascadeType.ALL)
