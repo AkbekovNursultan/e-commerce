@@ -1,4 +1,4 @@
-package kg.alatoo.e_commerce.dto.product;
+package kg.alatoo.e_commerce.dto.product.request;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
@@ -40,11 +40,9 @@ public class ProductRequest {
     @ValidEnumList(enumClass = Color.class, message = "Invalid color in the list")
     private List<String> colors;
 
-    @NotNull(message = "Tags cannot be null")
     @ValidEnumList(enumClass = Tag.class, message = "Invalid tag in the list")
     private List<String> tags;
 
-    @NotNull(message = "Sizes cannot be null")
     @ValidEnumList(enumClass = ProductSize.class, message = "Invalid size in the list")
     private List<String> sizes;
 

@@ -1,7 +1,7 @@
 package kg.alatoo.e_commerce.mapper.impl;
 
-import kg.alatoo.e_commerce.dto.product.ProductDetailsResponse;
-import kg.alatoo.e_commerce.dto.product.ProductResponse;
+import kg.alatoo.e_commerce.dto.product.response.ProductDetailsResponse;
+import kg.alatoo.e_commerce.dto.product.response.ProductResponse;
 import kg.alatoo.e_commerce.entity.Product;
 import kg.alatoo.e_commerce.mapper.ProductMapper;
 import org.springframework.stereotype.Component;

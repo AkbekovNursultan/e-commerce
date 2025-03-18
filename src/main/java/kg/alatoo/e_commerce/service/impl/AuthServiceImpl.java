@@ -120,7 +120,7 @@ public class AuthServiceImpl implements AuthService {
         } catch (ParseException e) {
             throw new RuntimeException(e);
         }
-        return userRepository.findByUsername(String.valueOf(object.get("sub"))).orElseThrow(() -> new RuntimeException("user can be null"));
+        return userRepository.findByUsername(String.valueOf(object.get("sub"))).orElseThrow(() -> new RuntimeException("User with this token not found"));
     }
 
     private UserLoginResponse convertToResponse(User user) {

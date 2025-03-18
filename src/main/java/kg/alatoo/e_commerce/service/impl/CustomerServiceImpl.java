@@ -1,6 +1,6 @@
 package kg.alatoo.e_commerce.service.impl;
 
-import kg.alatoo.e_commerce.dto.product.ProductResponse;
+import kg.alatoo.e_commerce.dto.product.response.ProductResponse;
 import kg.alatoo.e_commerce.dto.user.ChangePasswordRequest;
 import kg.alatoo.e_commerce.dto.user.CustomerInfoResponse;
 import kg.alatoo.e_commerce.entity.Customer;
@@ -49,6 +49,13 @@ public class CustomerServiceImpl implements CustomerService {
     public List<ProductResponse> getFavorites(String token) {
         User user = authService.getUserFromToken(token);
         return productMapper.toDtoS(user.getCustomer().getFavoritesList());
+    }
+
+    @Override
+    public void delete(String token) {
+        User user = authService.getUserFromToken(token);
+
+        userRepository.delete(user);
     }
 
     @Override

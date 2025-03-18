@@ -1,6 +1,6 @@
 package kg.alatoo.e_commerce.service;
 
-import kg.alatoo.e_commerce.dto.product.ProductResponse;
+import kg.alatoo.e_commerce.dto.product.response.ProductResponse;
 import kg.alatoo.e_commerce.dto.user.ChangePasswordRequest;
 import kg.alatoo.e_commerce.dto.user.CustomerInfoResponse;
 
@@ -18,4 +18,6 @@ public interface CustomerService {
     void deleteFavorite(String token, Long productId);
 
     List<ProductResponse> getFavorites(String token);
+
+    void delete(String token);
 }

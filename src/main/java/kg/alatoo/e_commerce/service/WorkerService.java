@@ -9,4 +9,8 @@ public interface WorkerService {
     void changePassword(String token, ChangePasswordRequest request);
 
     void update(String token, WorkerInfoResponse request);
+
+    void delete(String token);
+
+    void deleteByAdmin(String token, Long id);
 }

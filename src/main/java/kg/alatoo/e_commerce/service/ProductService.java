@@ -1,9 +1,9 @@
 package kg.alatoo.e_commerce.service;
 
 import kg.alatoo.e_commerce.dto.category.CategoryRequest;
-import kg.alatoo.e_commerce.dto.product.ProductDetailsResponse;
-import kg.alatoo.e_commerce.dto.product.ProductRequest;
-import kg.alatoo.e_commerce.dto.product.ProductResponse;
+import kg.alatoo.e_commerce.dto.product.response.ProductDetailsResponse;
+import kg.alatoo.e_commerce.dto.product.request.ProductRequest;
+import kg.alatoo.e_commerce.dto.product.response.ProductResponse;
 
 import java.util.List;
 

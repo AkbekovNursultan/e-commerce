@@ -1,4 +1,4 @@
-package kg.alatoo.e_commerce.dto.product;
+package kg.alatoo.e_commerce.dto.product.response;
 
 import kg.alatoo.e_commerce.enums.Color;
 import kg.alatoo.e_commerce.enums.ProductSize;

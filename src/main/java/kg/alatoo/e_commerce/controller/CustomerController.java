@@ -1,10 +1,11 @@
 package kg.alatoo.e_commerce.controller;
 
-import kg.alatoo.e_commerce.dto.product.ProductResponse;
+import kg.alatoo.e_commerce.dto.product.response.ProductResponse;
 import kg.alatoo.e_commerce.dto.user.ChangePasswordRequest;
 import kg.alatoo.e_commerce.dto.user.CustomerInfoResponse;
 import kg.alatoo.e_commerce.service.CustomerService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +33,12 @@ public class CustomerController {
     public String update(@RequestHeader("Authorization") String token, @RequestBody CustomerInfoResponse request){
         customerService.update(token, request);
         return "Profile updated.";
+    }
+
+    @DeleteMapping
+    public ResponseEntity<String> delete(@RequestHeader("Authorization") String token) {
+        customerService.delete(token);
+        return ResponseEntity.ok("Profile deleted successfully");
     }
 
     @PutMapping("/change_password")

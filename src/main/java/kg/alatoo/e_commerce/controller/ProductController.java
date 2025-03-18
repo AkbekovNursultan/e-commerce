@@ -2,9 +2,9 @@ package kg.alatoo.e_commerce.controller;
 
 import jakarta.validation.Valid;
 import kg.alatoo.e_commerce.dto.category.CategoryRequest;
-import kg.alatoo.e_commerce.dto.product.ProductDetailsResponse;
-import kg.alatoo.e_commerce.dto.product.ProductRequest;
-import kg.alatoo.e_commerce.dto.product.ProductResponse;
+import kg.alatoo.e_commerce.dto.product.response.ProductDetailsResponse;
+import kg.alatoo.e_commerce.dto.product.request.ProductRequest;
+import kg.alatoo.e_commerce.dto.product.response.ProductResponse;
 import kg.alatoo.e_commerce.exception.BadRequestException;
 import kg.alatoo.e_commerce.exception.NotFoundException;
 import kg.alatoo.e_commerce.service.ProductService;

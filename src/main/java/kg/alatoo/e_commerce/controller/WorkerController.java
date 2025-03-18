@@ -4,6 +4,8 @@ import kg.alatoo.e_commerce.dto.user.ChangePasswordRequest;
 import kg.alatoo.e_commerce.dto.user.WorkerInfoResponse;
 import kg.alatoo.e_commerce.service.WorkerService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,22 +17,29 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/worker")
 public class WorkerController {
+
     private final WorkerService workerService;
 
-    @GetMapping("/info")
-    public WorkerInfoResponse workerProfile(@RequestHeader("Authorization") String token){
-        return workerService.workerInfo(token);
+    @GetMapping
+    public ResponseEntity<WorkerInfoResponse> workerProfile(@RequestHeader("Authorization") String token){
+        return ResponseEntity.ok(workerService.workerInfo(token));
     }
 
-    @PutMapping("/update")
-    public String update(@RequestHeader("Authorization") String token, @RequestBody WorkerInfoResponse request){
+    @PutMapping
+    public ResponseEntity<String> update(@RequestHeader("Authorization") String token, @RequestBody WorkerInfoResponse request){
         workerService.update(token, request);
-        return "Profile updated.";
+        return ResponseEntity.ok("Profile updated successfully");
     }
 
-    @PutMapping("/change_password")
-    public String changePassword(@RequestHeader("Authorization") String token, @RequestBody ChangePasswordRequest request){
-        workerService.changePassword(token, request);
-        return "Password successfully changed.";
+    @DeleteMapping
+    public ResponseEntity<String> delete(@RequestHeader("Authorization") String token) {
+        workerService.delete(token);
+        return ResponseEntity.ok("Profile deleted successfully");
     }
+
+//    @PutMapping("/change_password")
+//    public String changePassword(@RequestHeader("Authorization") String token, @RequestBody ChangePasswordRequest request){
+//        workerService.changePassword(token, request);
+//        return "Password successfully changed.";
+//    }
 }//+

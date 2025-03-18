@@ -61,4 +61,18 @@ public class WorkerServiceImpl implements WorkerService{
 
         userRepository.save(user);
     }
+
+    @Override
+    public void delete(String token) {
+        User user = authService.getUserFromToken(token);
+
+        userRepository.delete(user);
+    }
+
+    public void deleteByAdmin(String token, Long id) {
+//        Worker worker = workerRepository.findById(id)
+//                .orElseThrow(() -> new ResourceNotFoundException("Worker not found"));
+//
+//        workerRepository.delete(worker);
+    }
 }
