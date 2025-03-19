@@ -1,7 +1,7 @@
 package kg.alatoo.e_commerce.service.impl;
 
-import kg.alatoo.e_commerce.dto.cart.CartInfoResponse;
-import kg.alatoo.e_commerce.dto.cart.OrderHistoryResponse;
+import kg.alatoo.e_commerce.dto.cart.response.CartInfoResponse;
+import kg.alatoo.e_commerce.dto.cart.response.OrderHistoryResponse;
 import kg.alatoo.e_commerce.entity.*;
 import kg.alatoo.e_commerce.enums.Role;
 import kg.alatoo.e_commerce.exception.BadRequestException;
@@ -15,104 +15,107 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @AllArgsConstructor
 public class CartServiceImpl implements CartService {
-    private ProductRepository productRepository;
-    private CartRepository cartRepository;
-    private UserRepository userRepository;
-    private CartElementRepository cartElementRepository;
-    private CartMapper cartMapper;
-    private AuthService authService;
-    private OrderHistoryRepository orderHistoryRepository;
-    private OrderHistoryMapper orderHistoryMapper;
+    private final ProductRepository productRepository;
+    private final CartRepository cartRepository;
+    private final UserRepository userRepository;
+    private final CartElementRepository cartElementRepository;
+    private final CartMapper cartMapper;
+    private final AuthService authService;
+    private final OrderHistoryRepository orderHistoryRepository;
+    private final OrderHistoryMapper orderHistoryMapper;
 
     @Override
     public CartInfoResponse info(String token) {
         User user = authService.getUserFromToken(token);
-        if(!user.getRole().equals(Role.CUSTOMER))
-            throw new BadRequestException("You can't do this.");
-        Customer customer = user.getCustomer();
+        if (!user.getRole().equals(Role.CUSTOMER))
+            throw new BadRequestException("Access denied. Only customers can perform this action.");
 
-        return cartMapper.toDto(customer.getCart());
+        return cartMapper.toDto(user.getCustomer().getCart());
     }
 
     @Override
     public void buy(String token) {
         User user = authService.getUserFromToken(token);
-        if(!user.getRole().equals(Role.CUSTOMER))
-            throw new BadRequestException("You aren't allowed to do this.");
-        Date date = new Date();
+        if (!user.getRole().equals(Role.CUSTOMER))
+            throw new BadRequestException("Access denied. Only customers can purchase items.");
+
         Cart cart = user.getCustomer().getCart();
+        if (cart.getProductsList().isEmpty()) {
+            throw new BadRequestException("Your cart is empty. Add items before purchasing.");
+        }
+
         Purchase purchase = new Purchase();
         purchase.setPrice(cart.getPrice());
-        purchase.setDate(date.toString());
+        purchase.setDate(new Date().toString());
 
         OrderHistory orderHistory = cart.getOrderHistory();
-        List<Purchase> purchases = orderHistory.getPurchases();
-        purchase.setOrderHistory(orderHistory);
-        purchases.add(purchase);
-        List<CartElement> newList = new ArrayList<>();
+        orderHistory.getPurchases().add(purchase);
+
         cart.setPrice(0.0);
-        cart.setProductsList(newList);
+        cart.getProductsList().clear();
+
         orderHistoryRepository.saveAndFlush(orderHistory);
         userRepository.saveAndFlush(user);
-
     }
 
     @Override
     public OrderHistoryResponse history(String token) {
         User user = authService.getUserFromToken(token);
-        if(!user.getRole().equals(Role.CUSTOMER))
-            throw new BadRequestException("You can't do this.");
-        Customer customer = user.getCustomer();
+        if (!user.getRole().equals(Role.CUSTOMER))
+            throw new BadRequestException("Access denied. Only customers can view order history.");
 
-        return orderHistoryMapper.toDto(customer.getCart());
+        return orderHistoryMapper.toDto(user.getCustomer().getCart());
     }
-
 
     @Override
     public void add(String token, Long productId, Integer quantity) {
         User user = authService.getUserFromToken(token);
-        if(!user.getRole().equals(Role.CUSTOMER))
-            throw new BadRequestException("You aren't allowed to do this.");
-        Customer customer = user.getCustomer();
-        Optional<Product> product = productRepository.findById(productId);
-        if(product.isEmpty())
-            throw new NotFoundException("Product with Id:" +productId+ " doesn't exist.", HttpStatus.NOT_FOUND);
-        Cart cart = cartRepository.findByCustomerId(user.getCustomer().getId());
+        if (!user.getRole().equals(Role.CUSTOMER))
+            throw new BadRequestException("Access denied. Only customers can add items to the cart.");
 
-        if(cart.getPrice() == null)
-            cart.setPrice(0.0);
-        if(product.get().getQuantity() - quantity < 0)
-            throw new BadRequestException("Not enough kolvo tovara karoche");
-        if(customer.getBalance() < product.get().getPrice() * quantity)
-            throw new BadRequestException("You don't have enough money on your balance. (poor bastard)");
+        Customer customer = user.getCustomer();
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("Product with ID " + productId + " not found.", HttpStatus.NOT_FOUND));
+
+        Cart cart = cartRepository.findByCustomerId(customer.getId());
+        cart.setPrice(cart.getPrice() == null ? 0.0 : cart.getPrice());
+
+        if (product.getQuantity() < quantity)
+            throw new BadRequestException("Insufficient stock for product: " + product.getTitle());
+
+        double totalPrice = product.getPrice() * quantity;
+        if (customer.getBalance() < totalPrice)
+            throw new BadRequestException("Insufficient balance. Please top up your account.");
+
         List<CartElement> list = cart.getProductsList();
-        product.get().setQuantity(product.get().getQuantity() - quantity);
-        customer.setBalance(user.getCustomer().getBalance() - product.get().getPrice() * quantity);
-        cart.setPrice(cart.getPrice() + product.get().getPrice() * quantity);
-        if(isElementInCart(product.get().getTitle(), list)){
-            CartElement cartElement = cartElementRepository.findByCart(cart);
+        product.setQuantity(product.getQuantity() - quantity);
+        customer.setBalance(customer.getBalance() - totalPrice);
+        cart.setPrice(cart.getPrice() + totalPrice);
+
+        CartElement cartElement = list.stream()
+                .filter(element -> element.getTitle().equals(product.getTitle()))
+                .findFirst()
+                .orElse(null);
+
+        if (cartElement != null) {
             cartElement.setQuantity(cartElement.getQuantity() + quantity);
-            cartElement.setTotal(cartElement.getTotal() + quantity * cartElement.getPrice());
-        }
-        else {
-            CartElement cartElement = new CartElement();
+            cartElement.setTotal(cartElement.getTotal() + totalPrice);
+        } else {
+            cartElement = new CartElement();
             cartElement.setQuantity(quantity);
-            cartElement.setTitle(product.get().getTitle());
-            cartElement.setPrice(product.get().getPrice());
-            cartElement.setTotal(cartElement.getPrice() * quantity);
+            cartElement.setTitle(product.getTitle());
+            cartElement.setPrice(product.getPrice());
+            cartElement.setTotal(totalPrice);
             cartElement.setCart(cart);
             list.add(cartElement);
-            cart.setProductsList(list);
-
         }
+
         cartRepository.saveAndFlush(cart);
         userRepository.saveAndFlush(user);
     }
@@ -120,20 +123,25 @@ public class CartServiceImpl implements CartService {
     @Override
     public void delete(String token, Long elementId) {
         User user = authService.getUserFromToken(token);
-        if(!user.getRole().equals(Role.CUSTOMER))
-            throw new BadRequestException("You aren't allowed to do this.");
+        if (!user.getRole().equals(Role.CUSTOMER))
+            throw new BadRequestException("Access denied. Only customers can remove items from the cart.");
+
         Customer customer = user.getCustomer();
-        List<CartElement> list = customer.getCart().getProductsList();
         Cart cart = customer.getCart();
-        CartElement cartElement = cartElementRepository.findById(elementId).get();
-        if(!isElementInCart(cartElement.getTitle(), list))
-            throw new BadRequestException("Cart doesn't have this product.");
+
+        CartElement cartElement = cartElementRepository.findById(elementId)
+                .orElseThrow(() -> new NotFoundException("Cart element not found.", HttpStatus.NOT_FOUND));
+
+        if (!cart.getProductsList().contains(cartElement))
+            throw new BadRequestException("This product is not in your cart.");
+
         customer.setBalance(customer.getBalance() + cartElement.getTotal());
         cart.setPrice(cart.getPrice() - cartElement.getTotal());
-        list.remove(list.get(elementIndex(list, cartElement)));
-        cartElementRepository.delete(cartElement);
-        cartRepository.saveAndFlush(cart);
 
+        cart.getProductsList().remove(cartElement);
+        cartElementRepository.delete(cartElement);
+
+        cartRepository.saveAndFlush(cart);
     }
 
     public Boolean isElementInCart(String title, List<CartElement> list){

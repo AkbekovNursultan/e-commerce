@@ -7,6 +7,7 @@ import kg.alatoo.e_commerce.dto.user.UserRegisterRequest;
 import kg.alatoo.e_commerce.entity.Cart;
 import kg.alatoo.e_commerce.entity.Customer;
 //import kg.alatoo.e_commerce.entity.OrderHistory;
+import kg.alatoo.e_commerce.entity.OrderHistory;
 import kg.alatoo.e_commerce.entity.User;
 import kg.alatoo.e_commerce.entity.Worker;
 import kg.alatoo.e_commerce.enums.Role;
@@ -72,9 +73,9 @@ public class AuthServiceImpl implements AuthService {
             customer.setFavoritesList(new ArrayList<>());
 
             Cart cart = new Cart();
- //           OrderHistory orderHistory = new OrderHistory();
- //           cart.setOrderHistory(orderHistory);
- //           orderHistory.setCart(cart);
+            OrderHistory orderHistory = new OrderHistory();
+            cart.setOrderHistory(orderHistory);
+            orderHistory.setCart(cart);
             customer.setCart(cart);
 
             user.setCustomer(customer);

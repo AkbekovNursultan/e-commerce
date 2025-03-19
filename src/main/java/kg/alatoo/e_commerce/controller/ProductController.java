@@ -46,31 +46,28 @@ public class ProductController {
     }
 
     @PostMapping("/add_category")
-    public ResponseEntity<String> addCategory(@RequestHeader("Authorization") String token,
-                                              @Valid @RequestBody CategoryRequest request) {
-        productService.addNewCategory(token, request);
+    public ResponseEntity<String> addCategory(@Valid @RequestBody CategoryRequest request) {
+        productService.addNewCategory(request);
         return ResponseEntity.status(HttpStatus.CREATED).body("Category successfully added.");
     }
 
     @PostMapping("/add_new_product")
-    public ResponseEntity<String> addProduct(@RequestHeader("Authorization") String token,
-                                             @Valid @RequestBody ProductRequest productRequest) {
-        productService.addNewProduct(productRequest, token);
+    public ResponseEntity<String> addProduct(@Valid @RequestBody ProductRequest productRequest) {
+        productService.addNewProduct(productRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body("Product was added.");
     }
 
     @PutMapping("/{productId}")
-    public ResponseEntity<String> updateProduct(@RequestHeader("Authorization") String token,
-                                                @PathVariable Long productId,
+    public ResponseEntity<String> updateProduct(@PathVariable Long productId,
                                                 @Valid @RequestBody ProductRequest productRequest) {
-        productService.update(token, productId, productRequest);
+        productService.update(productId, productRequest);
         return ResponseEntity.ok("Product updated successfully.");
     }
 
     @DeleteMapping("/{productId}")
-    public ResponseEntity<String> deleteProduct(@RequestHeader("Authorization") String token, @PathVariable Long productId) {
+    public ResponseEntity<String> deleteProduct(@PathVariable Long productId) {
         try {
-            productService.deleteProduct(token, productId);
+            productService.deleteProduct(productId);
             return ResponseEntity.ok("Product deleted successfully.");
         } catch (BadRequestException e) {
             throw new BadRequestException("Failed to delete product: " + e.getMessage());

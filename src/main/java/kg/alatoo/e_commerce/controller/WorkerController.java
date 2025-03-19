@@ -37,9 +37,4 @@ public class WorkerController {
         return ResponseEntity.ok("Profile deleted successfully");
     }
 
-//    @PutMapping("/change_password")
-//    public String changePassword(@RequestHeader("Authorization") String token, @RequestBody ChangePasswordRequest request){
-//        workerService.changePassword(token, request);
-//        return "Password successfully changed.";
-//    }
-}//+
+}

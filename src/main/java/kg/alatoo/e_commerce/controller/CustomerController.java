@@ -22,17 +22,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/customer")
 public class CustomerController {
-    private CustomerService customerService;
+    private final CustomerService customerService;
 
     @GetMapping("/info")
-    public CustomerInfoResponse customerProfile(@RequestHeader("Authorization") String token){
-        return customerService.customerInfo(token);
+    public ResponseEntity<CustomerInfoResponse> customerProfile(@RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(customerService.customerInfo(token));
     }
 
     @PutMapping("/update")
-    public String update(@RequestHeader("Authorization") String token, @RequestBody CustomerInfoResponse request){
+    public ResponseEntity<String> update(@RequestHeader("Authorization") String token,
+                                         @RequestBody CustomerInfoResponse request) {
         customerService.update(token, request);
-        return "Profile updated.";
+        return ResponseEntity.ok("Profile updated.");
     }
 
     @DeleteMapping
@@ -41,26 +42,36 @@ public class CustomerController {
         return ResponseEntity.ok("Profile deleted successfully");
     }
 
+    @GetMapping("/favorites")
+    public ResponseEntity<List<ProductResponse>> favorites(@RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(customerService.getFavorites(token));
+    }
+
+    @PostMapping("/add_favorite/{productId}")
+    public ResponseEntity<String> addFavorite(@RequestHeader("Authorization") String token,
+                                              @PathVariable Long productId) {
+        customerService.addFavorite(token, productId);
+        return ResponseEntity.ok("Product added to favorites.");
+    }
+
+    @DeleteMapping("/delete_favorite/{productId}")
+    public ResponseEntity<String> deleteFavorite(@RequestHeader("Authorization") String token,
+                                                 @PathVariable Long productId) {
+        customerService.deleteFavorite(token, productId);
+        return ResponseEntity.ok("Product removed from favorites.");
+    }
+
+
+
+
+
+
+
+
     @PutMapping("/change_password")
     public String changePassword(@RequestHeader("Authorization") String token, @RequestBody ChangePasswordRequest request){
         customerService.changePassword(token, request);
         return "Password successfully changed.";
-    }
-
-    @GetMapping("/favorites")
-    public List<ProductResponse> favorites(@RequestHeader("Authorization") String token){
-        return customerService.getFavorites(token);
-    }
-    @PostMapping("/add_favorite/{productId}")
-    public String addFavorite(@RequestHeader("Authorization") String token, @PathVariable Long productId){
-        customerService.addFavorite(token, productId);
-        return "Done";
-    }
-
-    @DeleteMapping("/delete_favorite/{productId}")
-    public String deleteFavorite(@RequestHeader("Authorization") String token, @PathVariable Long productId){
-        customerService.deleteFavorite(token, productId);
-        return "Done";
     }
 
     //+

@@ -22,94 +22,104 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @AllArgsConstructor
 public class CustomerServiceImpl implements CustomerService {
-    private UserMapper userMapper;
-    private UserRepository userRepository;
-    private AuthService authService;
-    private PasswordEncoder encoder;
-    private ProductRepository productRepository;
-    private ProductMapper productMapper;
+    private final UserMapper userMapper;
+    private final UserRepository userRepository;
+    private final AuthService authService;
+    private final PasswordEncoder encoder;
+    private final ProductRepository productRepository;
+    private final ProductMapper productMapper;
 
     @Override
     public CustomerInfoResponse customerInfo(String token) {
-        System.out.println("kig");
         User user = authService.getUserFromToken(token);
-        if(!user.getRole().equals(Role.CUSTOMER))
+        if (user.getRole() != Role.CUSTOMER)
             throw new BadRequestException("You can't do this.");
-        Customer customer = user.getCustomer();
-        return userMapper.toDto(customer);
-    }
 
+        return userMapper.toDto(user.getCustomer());
+    }
 
     @Override
     public List<ProductResponse> getFavorites(String token) {
         User user = authService.getUserFromToken(token);
-        return productMapper.toDtoS(user.getCustomer().getFavoritesList());
+        Customer customer = user.getCustomer();
+        return productMapper.toDtoS(customer.getFavoritesList() != null ? customer.getFavoritesList() : new ArrayList<>());
     }
 
     @Override
     public void delete(String token) {
         User user = authService.getUserFromToken(token);
+        Customer customer = user.getCustomer();
 
-        userRepository.delete(user);
+        if (customer.getCart() != null) {
+            customer.setCart(null); // Break link to cart
+        }
+        if (customer.getFavoritesList() != null) {
+            customer.getFavoritesList().clear(); // Clear favorite products
+        }
+
+        userRepository.delete(user); // Now safe to delete
     }
 
     @Override
     public void addFavorite(String token, Long productId) {
         User user = authService.getUserFromToken(token);
-        if(!user.getRole().equals(Role.CUSTOMER))
+        if (user.getRole() != Role.CUSTOMER)
             throw new BadRequestException("You can't do this ma frend.");
-        Optional<Product> product = productRepository.findById(productId);
-        if(product.isEmpty())
-            throw new BadRequestException("Invalid Product Id.");
-        List<Product> favoritesList = new ArrayList<>();
-        if(!user.getCustomer().getFavoritesList().isEmpty())
-            favoritesList = user.getCustomer().getFavoritesList();
-        favoritesList.add(product.get());
-        user.getCustomer().setFavoritesList(favoritesList);
-        userRepository.save(user);
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("Invalid Product Id.", HttpStatus.NOT_FOUND));
+
+        Customer customer = user.getCustomer();
+        if (customer.getFavoritesList() == null) {
+            customer.setFavoritesList(new ArrayList<>());
+        }
+        if (!customer.getFavoritesList().contains(product)) {
+            customer.getFavoritesList().add(product);
+            userRepository.save(user);
+        }
     }
 
     @Override
     public void deleteFavorite(String token, Long productId) {
         User user = authService.getUserFromToken(token);
-        Customer customer = user.getCustomer();
-        if(!user.getRole().equals(Role.CUSTOMER))
+        if (user.getRole() != Role.CUSTOMER)
             throw new BadRequestException("You can't do this ma frend");
-        Optional<Product> product = productRepository.findById(productId);
-        if(product.isEmpty()|| !customer.getFavoritesList().contains(product.get()))
-            throw new NotFoundException("This product doesn't exist!", HttpStatus.NOT_FOUND);
-        customer.getFavoritesList().remove(product.get());
-        userRepository.save(user);
+
+        Customer customer = user.getCustomer();
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("This product doesn't exist!", HttpStatus.NOT_FOUND));
+
+        if (customer.getFavoritesList() != null && customer.getFavoritesList().remove(product)) {
+            userRepository.save(user);
+        }
     }
 
     @Override
     public void update(String token, CustomerInfoResponse request) {
         User user = authService.getUserFromToken(token);
-        Optional<User> user1 = userRepository.findByUsername(request.getUsername());
-        if(!user.getRole().equals(Role.CUSTOMER))
+        if (user.getRole() != Role.CUSTOMER)
             throw new BadRequestException("You can't do this.");
-        if(request.getUsername() != null){
-            if(user1.isEmpty() || user1.get() == user)
-                user.setUsername(request.getUsername());
-            else
-                throw new BadRequestException("This username already in use!");
+
+        userRepository.findByUsername(request.getUsername())
+                .filter(existingUser -> !existingUser.equals(user))
+                .ifPresent(existingUser -> { throw new BadRequestException("This username is already in use!"); });
+
+        if (request.getUsername() != null) {
+            user.setUsername(request.getUsername());
         }
+
         Customer customer = user.getCustomer();
         customer.setCity(request.getCity());
         customer.setCountry(request.getCountry());
         customer.setPhone(request.getPhone());
-//        if (request.getFirstName() != null)
-//            user.setFirstName(request.getFirstName());
-//        if (request.getLastName() != null)
-//            user.setLastName(request.getLastName());
         customer.setZipCode(request.getZipCode());
         customer.setAddress(request.getAddress());
         customer.setAdditionalInfo(request.getAdditionalInfo());
+
         userRepository.save(user);
     }
 

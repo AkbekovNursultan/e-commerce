@@ -1,9 +1,10 @@
 package kg.alatoo.e_commerce.controller;
 
-import kg.alatoo.e_commerce.dto.cart.CartInfoResponse;
-import kg.alatoo.e_commerce.dto.cart.OrderHistoryResponse;
+import kg.alatoo.e_commerce.dto.cart.response.CartInfoResponse;
+import kg.alatoo.e_commerce.dto.cart.response.OrderHistoryResponse;
 import kg.alatoo.e_commerce.service.CartService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,29 +18,36 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/cart")
 public class CartController {
-    private CartService cartService;
+    private final CartService cartService;
+
     @GetMapping("/show")
-    public CartInfoResponse info(@RequestHeader("Authorization")String token){
-        return cartService.info(token);
+    public ResponseEntity<CartInfoResponse> getCartInfo(@RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(cartService.info(token));
     }
+
     @PostMapping("/add/{productId}")
-    public String add(@RequestHeader("Authorization")String token, @PathVariable Long productId, @RequestParam Integer quantity){
+    public ResponseEntity<String> addToCart(@RequestHeader("Authorization") String token,
+                                            @PathVariable Long productId,
+                                            @RequestParam Integer quantity) {
         cartService.add(token, productId, quantity);
-        return "Purchase has been made successfully!";
+        return ResponseEntity.ok("Purchase has been made successfully!");
     }
 
     @DeleteMapping("/delete/{productId}")
-    public String delete(@RequestHeader("Authorization")String token, @PathVariable Long productId){
+    public ResponseEntity<String> removeFromCart(@RequestHeader("Authorization") String token,
+                                                 @PathVariable Long productId) {
         cartService.delete(token, productId);
-        return "Product successfully deleted from your cart";
+        return ResponseEntity.ok("Product successfully deleted from your cart.");
     }
+
     @PostMapping("/buy")
-    public String buy(@RequestHeader("Authorization") String token){
+    public ResponseEntity<String> purchaseCart(@RequestHeader("Authorization") String token) {
         cartService.buy(token);
-        return "Done";
+        return ResponseEntity.ok("Purchase completed successfully!");
     }
+
     @GetMapping("/history")
-    public OrderHistoryResponse history(@RequestHeader("Authorization") String token){
-        return cartService.history(token);
+    public ResponseEntity<OrderHistoryResponse> getOrderHistory(@RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(cartService.history(token));
     }
 }

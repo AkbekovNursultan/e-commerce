@@ -1,7 +1,7 @@
 package kg.alatoo.e_commerce.mapper.impl;
 
-import kg.alatoo.e_commerce.dto.cart.CartElementResponse;
-import kg.alatoo.e_commerce.dto.cart.CartInfoResponse;
+import kg.alatoo.e_commerce.dto.cart.response.CartElementResponse;
+import kg.alatoo.e_commerce.dto.cart.response.CartInfoResponse;
 import kg.alatoo.e_commerce.entity.Cart;
 import kg.alatoo.e_commerce.entity.CartElement;
 import kg.alatoo.e_commerce.mapper.CartMapper;

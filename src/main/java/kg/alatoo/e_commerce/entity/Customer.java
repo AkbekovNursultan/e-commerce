@@ -39,7 +39,7 @@ public class Customer {
     @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
     private Cart cart;
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany
     private List<Product> favoritesList;
 }
 

@@ -14,6 +14,7 @@ import kg.alatoo.e_commerce.exception.NotFoundException;
 import kg.alatoo.e_commerce.mapper.ProductMapper;
 import kg.alatoo.e_commerce.repository.CartRepository;
 import kg.alatoo.e_commerce.repository.CategoryRepository;
+import kg.alatoo.e_commerce.repository.CustomerRepository;
 import kg.alatoo.e_commerce.repository.ProductRepository;
 import kg.alatoo.e_commerce.repository.UserRepository;
 import kg.alatoo.e_commerce.service.AuthService;
@@ -32,18 +33,18 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
-    private final UserRepository userRepository;
+    private final CustomerRepository customerRepository;
     private final AuthService authService;
     private final ProductMapper productMapper;
     private final CartRepository cartRepository;
 
     @Transactional
     @Override
-    public void addNewProduct(ProductRequest productRequest, String token) {
-        User user = authService.getUserFromToken(token);
-        if (!user.getRole().equals(Role.WORKER)) {
-            throw new BadRequestException("You do not have permission to add products.");
-        }
+    public void addNewProduct(ProductRequest productRequest) {
+//        User user = authService.getUserFromToken(token);
+//        if (!user.getRole().equals(Role.WORKER)) {
+//            throw new BadRequestException("You do not have permission to add products.");
+//        }
 
         Category category = categoryRepository.findByName(productRequest.getCategory())
                 .orElseThrow(() -> new BadRequestException("Category '" + productRequest.getCategory() + "' does not exist."));
@@ -75,11 +76,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Transactional
     @Override
-    public void addNewCategory(String token, CategoryRequest categoryRequest) {
-        User user = authService.getUserFromToken(token);
-        if (!user.getRole().equals(Role.WORKER)) {
-            throw new BadRequestException("You do not have permission to add categories.");
-        }
+    public void addNewCategory(CategoryRequest categoryRequest) {
+//        User user = authService.getUserFromToken(token);
+//        if (!user.getRole().equals(Role.WORKER)) {
+//            throw new BadRequestException("You do not have permission to add categories.");
+//        }
 
         if (categoryRepository.findByName(categoryRequest.getName()).isPresent()) {
             throw new BadRequestException("Category already exists.");
@@ -92,11 +93,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Transactional
     @Override
-    public void update(String token, Long productId, ProductRequest request) {
-        User user = authService.getUserFromToken(token);
-        if (!user.getRole().equals(Role.WORKER)) {
-            throw new BadRequestException("You do not have permission to update products.");
-        }
+    public void update(Long productId, ProductRequest request) {
+//        User user = authService.getUserFromToken(token);
+//        if (!user.getRole().equals(Role.WORKER)) {
+//            throw new BadRequestException("You do not have permission to update products.");
+//        }
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new BadRequestException("Invalid product ID: " + productId));
@@ -152,11 +153,11 @@ public class ProductServiceImpl implements ProductService {
 
     @Transactional
     @Override
-    public void deleteProduct(String token, Long productId) {
-        User user = authService.getUserFromToken(token);
-        if (!user.getRole().equals(Role.WORKER)) {
-            throw new BadRequestException("You do not have permission to delete products.");
-        }
+    public void deleteProduct(Long productId) {
+//        User user = authService.getUserFromToken(token);
+//        if (!user.getRole().equals(Role.WORKER)) {
+//            throw new BadRequestException("You do not have permission to delete products.");
+//        }
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new NotFoundException("Product with ID " + productId + " not found!", HttpStatus.NOT_FOUND));
@@ -166,9 +167,16 @@ public class ProductServiceImpl implements ProductService {
 //            cart.getProductsList().remove(product);
 //            cartRepository.save(cart);
 //        }
+
+        List<Customer> customers = customerRepository.findAllByFavoritesListContaining(product);
+        for (Customer customer : customers) {
+            customer.getFavoritesList().remove(product);
+            customerRepository.save(customer);
+        }
+
         product.getCategory().getProducts().remove(product);
-        product.setCategory(null);
         categoryRepository.save(product.getCategory());
+        product.setCategory(null);
         productRepository.delete(product);
     }
 

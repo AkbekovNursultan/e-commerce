@@ -1,4 +1,4 @@
-package kg.alatoo.e_commerce.dto.cart;
+package kg.alatoo.e_commerce.dto.cart.response;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -5,6 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
+
 public class ProductResponse {
     private Long id;
     private String title;
