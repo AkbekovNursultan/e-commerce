@@ -1,11 +1,10 @@
 package kg.alatoo.e_commerce.entity;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
@@ -16,6 +15,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 
@@ -32,8 +32,9 @@ public class User implements UserDetails {
     private String password;
     @Enumerated(EnumType.STRING)
     private Role role;
-//    private String firstName;
-//    private String lastName;
+    private Boolean isEmailVerified;
+    private String verificationCode;
+    private Instant verificationCodeExpiration;
 
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)

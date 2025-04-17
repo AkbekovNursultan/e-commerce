@@ -6,7 +6,7 @@ import kg.alatoo.e_commerce.dto.user.UserLoginResponse;
 import kg.alatoo.e_commerce.dto.user.UserRegisterRequest;
 import kg.alatoo.e_commerce.entity.Cart;
 import kg.alatoo.e_commerce.entity.Customer;
-//import kg.alatoo.e_commerce.entity.OrderHistory;
+
 import kg.alatoo.e_commerce.entity.OrderHistory;
 import kg.alatoo.e_commerce.entity.User;
 import kg.alatoo.e_commerce.entity.Worker;
@@ -17,8 +17,9 @@ import kg.alatoo.e_commerce.repository.CustomerRepository;
 import kg.alatoo.e_commerce.repository.UserRepository;
 import kg.alatoo.e_commerce.repository.WorkerRepository;
 import kg.alatoo.e_commerce.service.AuthService;
+import kg.alatoo.e_commerce.service.EmailService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,13 +27,16 @@ import org.springframework.stereotype.Service;
 import net.minidev.json.JSONObject;
 import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Random;
+
 
 @Service
 @RequiredArgsConstructor
@@ -42,8 +46,10 @@ public class AuthServiceImpl implements AuthService {
     private final WorkerRepository workerRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
 
+    @Transactional
     @Override
     public void register(UserRegisterRequest userRegisterRequest) {
         if (userRepository.findByUsername(userRegisterRequest.getUsername()).isPresent()) {
@@ -55,11 +61,18 @@ public class AuthServiceImpl implements AuthService {
         }
 
         User user = new User();
+        if(userRegisterRequest.getId() != null) {
+            user.setId(userRegisterRequest.getId());
+        }
         user.setUsername(userRegisterRequest.getUsername());
         user.setPassword(passwordEncoder.encode(userRegisterRequest.getPassword()));
         user.setRole(Role.valueOf(userRegisterRequest.getRole().toUpperCase()));
         user.setEmail(userRegisterRequest.getEmail());
+        user.setIsEmailVerified(false);
 
+        String code = emailService.generateCode();
+        user.setVerificationCode(code);
+        user.setVerificationCodeExpiration(Instant.now().plus(Duration.ofMinutes(1)));
         if (user.getRole() == Role.CUSTOMER) {
             Customer customer = new Customer();
             customer.setCountry(userRegisterRequest.getCountry());
@@ -86,21 +99,23 @@ public class AuthServiceImpl implements AuthService {
             worker.setUser(user);
             user.setWorker(worker);
             userRepository.save(user);
-            workerRepository.save(worker);
         } else {
             throw new BadRequestException("Unknown role.");
         }
+        emailService.sendVerificationLink(user.getEmail(), code);
     }
 
     @Override
     public UserLoginResponse login(UserLoginRequest userLoginRequest) {
         User user = userRepository.findByUsername(userLoginRequest.getUsername())
                 .orElseThrow(() -> new CustomBadCredentialsException("Invalid username or password."));
-
+        if (!user.getIsEmailVerified()) {
+            throw new AccessDeniedException("Please verify your email before accessing this resource.");
+        }
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userLoginRequest.getUsername(),userLoginRequest.getPassword()));
 
-        }catch (org.springframework.security.authentication.BadCredentialsException e){
+        } catch (org.springframework.security.authentication.BadCredentialsException e){
             throw new CustomBadCredentialsException("Invalid username or password.");
         }
 
@@ -142,6 +157,7 @@ public class AuthServiceImpl implements AuthService {
         }
         return false;
     }
+
 }
 
 
