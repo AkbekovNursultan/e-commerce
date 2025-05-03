@@ -10,9 +10,11 @@ import kg.alatoo.e_commerce.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
@@ -29,7 +31,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body("User added successfully!\nPlease, verify your email");
     }
 
-    @PostMapping("/login")
+    @PostMapping("/login-basic")
     public ResponseEntity<UserLoginResponse> login(@Valid @RequestBody UserLoginRequest userLoginRequest) {
         return ResponseEntity.ok(authService.login(userLoginRequest));
     }
@@ -40,6 +42,17 @@ public class AuthController {
             HttpServletResponse response
     ) throws IOException {
         authService.refreshToken(request, response);
+    }
+
+    @GetMapping("/")
+    public ResponseEntity<UserLoginResponse> success(@RequestParam String token,
+                                          @RequestParam String refreshToken){
+        return ResponseEntity.ok(new UserLoginResponse(token, refreshToken));
+    }
+
+    @GetMapping("/error")
+    public ResponseEntity.BodyBuilder handleError() {
+        return ResponseEntity.badRequest();
     }
 
 }

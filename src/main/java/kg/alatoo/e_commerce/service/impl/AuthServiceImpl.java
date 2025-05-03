@@ -51,7 +51,6 @@ import java.util.Map;
 public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
-    private final WorkerRepository workerRepository;
     private final TokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -172,7 +171,8 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private UserLoginResponse convertToResponse(User user) {
+    @Override
+    public UserLoginResponse convertToResponse(User user) {
         UserLoginResponse loginResponse = new UserLoginResponse();
 
         Map<String, Object> extraClaims = new HashMap<>();

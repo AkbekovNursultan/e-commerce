@@ -11,6 +11,8 @@ import java.io.IOException;
 
 
 public interface AuthService {
+    UserLoginResponse convertToResponse(User user);
+
     void register(UserRegisterRequest userRegisterRequest);
 
     UserLoginResponse login(UserLoginRequest userLoginRequest);
