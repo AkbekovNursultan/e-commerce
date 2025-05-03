@@ -1,5 +1,7 @@
 package kg.alatoo.e_commerce.controller;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import kg.alatoo.e_commerce.dto.user.UserLoginRequest;
 import kg.alatoo.e_commerce.dto.user.UserLoginResponse;
@@ -12,6 +14,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.io.IOException;
 
 @RequiredArgsConstructor
 @RestController
@@ -28,6 +32,14 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<UserLoginResponse> login(@Valid @RequestBody UserLoginRequest userLoginRequest) {
         return ResponseEntity.ok(authService.login(userLoginRequest));
+    }
+
+    @PostMapping("/refresh-token")
+    public void refresh(
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws IOException {
+        authService.refreshToken(request, response);
     }
 
 }

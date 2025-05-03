@@ -1,5 +1,8 @@
 package kg.alatoo.e_commerce.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import kg.alatoo.e_commerce.config.JwtService;
 import kg.alatoo.e_commerce.dto.user.UserLoginRequest;
 import kg.alatoo.e_commerce.dto.user.UserLoginResponse;
@@ -8,12 +11,15 @@ import kg.alatoo.e_commerce.entity.Cart;
 import kg.alatoo.e_commerce.entity.Customer;
 
 import kg.alatoo.e_commerce.entity.OrderHistory;
+import kg.alatoo.e_commerce.entity.Token;
 import kg.alatoo.e_commerce.entity.User;
 import kg.alatoo.e_commerce.entity.Worker;
 import kg.alatoo.e_commerce.enums.Role;
+import kg.alatoo.e_commerce.enums.TokenType;
 import kg.alatoo.e_commerce.exception.CustomBadCredentialsException;
 import kg.alatoo.e_commerce.exception.BadRequestException;
 import kg.alatoo.e_commerce.repository.CustomerRepository;
+import kg.alatoo.e_commerce.repository.TokenRepository;
 import kg.alatoo.e_commerce.repository.UserRepository;
 import kg.alatoo.e_commerce.repository.WorkerRepository;
 import kg.alatoo.e_commerce.service.AuthService;
@@ -21,6 +27,7 @@ import kg.alatoo.e_commerce.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,13 +36,14 @@ import net.minidev.json.parser.JSONParser;
 import net.minidev.json.parser.ParseException;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Random;
 
 
 @Service
@@ -44,6 +52,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final CustomerRepository customerRepository;
     private final WorkerRepository workerRepository;
+    private final TokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final EmailService emailService;
@@ -115,7 +124,7 @@ public class AuthServiceImpl implements AuthService {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(userLoginRequest.getUsername(),userLoginRequest.getPassword()));
 
-        } catch (org.springframework.security.authentication.BadCredentialsException e){
+        } catch (BadCredentialsException e){
             throw new CustomBadCredentialsException("Invalid username or password.");
         }
 
@@ -139,16 +148,65 @@ public class AuthServiceImpl implements AuthService {
         return userRepository.findByUsername(String.valueOf(object.get("sub"))).orElseThrow(() -> new RuntimeException("User with this token not found"));
     }
 
+    @Override
+    public void refreshToken(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        final String authHeader = request.getHeader("Authorization");
+        final String refreshToken;
+        final String username;
+        if (authHeader == null || !authHeader.startsWith("Bearer ")){
+            return;
+        }
+        refreshToken = authHeader.substring(7);
+        username = jwtService.extractUsername(refreshToken);
+        if (username != null){
+            var user = this.userRepository.findByUsername(username).orElseThrow();
+            if (jwtService.isTokenValid(refreshToken, user)){
+                var accessToken = jwtService.generateToken(user);
+                UserLoginResponse authResponse = new UserLoginResponse();
+                authResponse.setAccessToken(accessToken);
+                authResponse.setRefreshToken(refreshToken);
+                revokeAllUserTokens(user);
+                saveToken(user, accessToken);
+                new ObjectMapper().writeValue(response.getOutputStream(), authResponse);
+            }
+        }
+    }
+
     private UserLoginResponse convertToResponse(User user) {
         UserLoginResponse loginResponse = new UserLoginResponse();
 
         Map<String, Object> extraClaims = new HashMap<>();
 
-        String token = jwtService.generateToken(extraClaims, user);
-        loginResponse.setToken(token);
-
+        String jwtToken = jwtService.generateToken(extraClaims, user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+        loginResponse.setAccessToken(jwtToken);
+        loginResponse.setRefreshToken(refreshToken);
+        revokeAllUserTokens(user);
+        saveToken(user, jwtToken);
         return loginResponse;
     }
+
+    private void saveToken(User user, String jwtToken){
+        Token token = new Token();
+        token.setToken(jwtToken);
+        token.setUser(user);
+        token.setTokenType(TokenType.BEARER);
+        token.setExpired(false);
+        token.setRevoked(false);
+        tokenRepository.save(token);
+    }
+
+    private void revokeAllUserTokens(User user){
+        List<Token> validUserTokens = tokenRepository.findAllValidTokensByUser(user.getId());
+        if(validUserTokens.isEmpty())
+            return;
+        validUserTokens.forEach(t ->{
+            t.setExpired(true);
+            t.setRevoked(true);
+        });
+        tokenRepository.saveAll(validUserTokens);
+    }
+
 
     private boolean containsRole(String role1) {
         for (Role role:Role.values()){
