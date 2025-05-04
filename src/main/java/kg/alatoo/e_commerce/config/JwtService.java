@@ -18,12 +18,20 @@ import java.util.function.Function;
 @Component
 public class JwtService {
 
-    @Value("${application.security.jwt.secret-key}")
-    private String secretKey;
-    @Value("${application.security.jwt.expiration}")
-    private long jwtExpiration;
-    @Value("${application.security.jwt.refresh-token.expiration}")
-    private long refreshExpiration;
+    private final String secretKey;
+    private final long jwtExpiration;
+    private final long refreshExpiration;
+
+    public JwtService(
+            @Value("${application.security.jwt.secret-key}") String secretKey,
+            @Value("${application.security.jwt.expiration}") long jwtExpiration,
+            @Value("${application.security.jwt.refresh-token.expiration}") long refreshExpiration
+    ) {
+        this.secretKey = secretKey;
+        this.jwtExpiration = jwtExpiration;
+        this.refreshExpiration = refreshExpiration;
+    }
+
 
     public String generateToken(
             Map<String, Object> extraClaims,

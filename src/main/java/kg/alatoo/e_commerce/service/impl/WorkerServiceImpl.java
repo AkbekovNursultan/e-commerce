@@ -11,6 +11,7 @@ import kg.alatoo.e_commerce.repository.UserRepository;
 import kg.alatoo.e_commerce.service.AuthService;
 import kg.alatoo.e_commerce.service.WorkerService;
 import lombok.AllArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +29,7 @@ public class WorkerServiceImpl implements WorkerService{
     public WorkerInfoResponse workerInfo(String token) {
         User user = authService.getUserFromToken(token);
         if(!user.getRole().equals(Role.WORKER))
-            throw new BadRequestException("You can't do this.");
+            throw new BadRequestException(HttpStatus.UNAUTHORIZED, "You can't do this.");
         Worker worker = user.getWorker();
         return userMapper.toDtoWorker(worker);
     }

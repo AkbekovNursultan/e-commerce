@@ -1,5 +1,6 @@
 package kg.alatoo.e_commerce.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,34 +32,25 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.authService = authService;
-        setDefaultTargetUrl("/");
     }
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         if (authentication.getPrincipal() instanceof OAuth2AuthenticatedPrincipal principal) {
             Map<String, Object> attributes = principal.getAttributes();
             String githubId = String.valueOf(attributes.get("id"));
 
-            User user = userRepository.findByGithubId(githubId).orElseThrow(() -> new RuntimeException("User not found after OAuth2 login"));
+            User user = userRepository.findByGithubId(githubId)
+                    .orElseThrow(() -> new RuntimeException("User not found after OAuth2 login"));
 
-            UserDetails userDetails = org.springframework.security.core.userdetails.User.withUsername(user.getUsername())
-                    .password("")
-                    .authorities(user.getRole().name())
-                    .build();
+            UserLoginResponse loginResponse = authService.convertToResponse(user);
 
-            UserLoginResponse response1 = authService.convertToResponse(user);
-
-            String jwtToken = response1.getAccessToken();
-            String refreshToken = response1.getRefreshToken();
-
-
-
-            String redirectUrl = "/?token=" + jwtToken + "&refreshToken=" + refreshToken;
-
-            getRedirectStrategy().sendRedirect(request, response, redirectUrl);
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType("application/json");
+            new ObjectMapper().writeValue(response.getWriter(), loginResponse);
         } else {
-            super.onAuthenticationSuccess(request, response, authentication);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed");
         }
     }
+
 }

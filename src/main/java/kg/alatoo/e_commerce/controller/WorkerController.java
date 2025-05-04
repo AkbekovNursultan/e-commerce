@@ -15,12 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("/worker")
+@RequestMapping("/api/worker")
 public class WorkerController {
 
     private final WorkerService workerService;
 
-    @GetMapping
+    @GetMapping("/info")
     public ResponseEntity<WorkerInfoResponse> workerProfile(@RequestHeader("Authorization") String token){
         return ResponseEntity.ok(workerService.workerInfo(token));
     }

@@ -30,29 +30,56 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/register", "/error", "/login-basic", "/login-success", "/email/**", "/h2-console/**",
-                                "/oauth2/**", "/login/oauth2/**", "/refresh-token", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/register", "/login", "/api/login-basic", "/api/login/?error", "/api/email/**", "/h2-console/**",
+                                "/oauth2/**", "/login/oauth2/**", "/api/refresh-token", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .logout(logout -> logout.permitAll())
                 .oauth2Login(oauth2 -> oauth2
-                        .redirectionEndpoint(redirectionEndpoint ->
-                                redirectionEndpoint.baseUri("/login/oauth2/code/*")
+//                        .loginPage("/login")
+                        .authorizationEndpoint(authorization -> authorization
+                                .baseUri("/oauth2/authorization"))
+                        .redirectionEndpoint(redirection -> redirection
+                                .baseUri("/login/oauth2/code/*")
                         )
-                        .userInfoEndpoint(userInfoEndpoint ->
-                                userInfoEndpoint.userService(customOAuth2UserService)
-                        )
-                        .successHandler(oAuth2AuthenticationSuccessHandler)
-                )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling()
-                .authenticationEntryPoint((request, response, authException) -> {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.setContentType("application/json");
-                    response.getWriter().write("\"message\": \"Token is missing or invalid.\"");
-                });
+                        .successHandler(oAuth2AuthenticationSuccessHandler))
+//                        .failureUrl("/login?error"))
+
+        ;
+        http.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
 }
+
+//                .exceptionHandling(ex -> ex
+//                        .authenticationEntryPoint((request, response, authException) -> {
+//                            String accept = request.getHeader("Accept");
+//                            boolean isApiRequest = accept != null && accept.contains("application/json")
+//                                    || request.getRequestURI().startsWith("/api");
+//
+//                            if (isApiRequest) {
+//                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                                response.setContentType("application/json");
+//                                response.getWriter().write("{\"message\": \"Token is missing or invalid.\"}");
+//                            } else {
+//                                response.sendRedirect("/api/login/?error");
+//                            }
+//                        })
+//                )
+
+
+//                .exceptionHandling()
+//                .authenticationEntryPoint((request, response, authException) -> {
+//                    String acceptHeader = request.getHeader("Accept");
+//                    boolean isApiRequest = acceptHeader != null && acceptHeader.contains("application/json");
+//
+//                    if (isApiRequest || request.getRequestURI().startsWith("/api")) {
+//                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                        response.setContentType("application/json");
+//                        response.getWriter().write("{\"message\": \"Token is missing or invalid.\"}");
+//                    } else {
+//                        response.sendRedirect("/error");
+//                    }
+//                })

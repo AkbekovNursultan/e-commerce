@@ -24,7 +24,7 @@ import java.io.IOException;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping
+@RequestMapping("/api")
 public class AuthController {
     private final AuthService authService;
 
@@ -62,16 +62,12 @@ public class AuthController {
         authService.refreshToken(request, response);
     }
 
-    @GetMapping("/")
-    public ResponseEntity<UserLoginResponse> success(@RequestParam String token,
-                                          @RequestParam String refreshToken){
-        return ResponseEntity.ok(new UserLoginResponse(token, refreshToken));
-    }
+
 
 }
 
-
-//    @GetMapping("/error")
+//@GetMapping("/login/?error")
 //    public ResponseEntity.BodyBuilder handleError() {
 //        return ResponseEntity.badRequest();
 //    }
+

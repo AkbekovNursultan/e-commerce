@@ -46,7 +46,7 @@ class AuthControllerTest {
 
         when(authService.login(any(UserLoginRequest.class))).thenReturn(response);
 
-        mockMvc.perform(post("/login-basic")
+        mockMvc.perform(post("/api/login-basic")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -54,21 +54,19 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.refreshToken").value("refresh-token"));
     }
 
-    // ❌ Test login validation failure
     @Test
     void shouldFailLoginWhenUsernameBlank() throws Exception {
         UserLoginRequest request = new UserLoginRequest();
         request.setUsername("");
         request.setPassword("somePassword");
 
-        mockMvc.perform(post("/login-basic")
+        mockMvc.perform(post("/api/login-basic")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").exists());
     }
 
-    // ✅ Test successful registration
     @Test
     void shouldRegisterSuccessfully() throws Exception {
         UserRegisterRequest request = new UserRegisterRequest();
@@ -78,14 +76,13 @@ class AuthControllerTest {
         request.setRole("USER");
         request.setPhone("1234567890");
 
-        mockMvc.perform(post("/register")
+        mockMvc.perform(post("/api/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
                 .andExpect(content().string(containsString("User added successfully")));
     }
 
-    // ❌ Test register validation failure
     @Test
     void shouldFailRegisterWithInvalidEmailAndShortUsername() throws Exception {
         UserRegisterRequest request = new UserRegisterRequest();
@@ -95,7 +92,7 @@ class AuthControllerTest {
         request.setRole("");
         request.setPhone("abc"); // invalid
 
-        mockMvc.perform(post("/register")
+        mockMvc.perform(post("/api/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())

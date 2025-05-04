@@ -37,7 +37,7 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerInfoResponse customerInfo(String token) {
         User user = authService.getUserFromToken(token);
         if (user.getRole() != Role.CUSTOMER)
-            throw new BadRequestException("You can't do this.");
+            throw new BadRequestException(HttpStatus.UNAUTHORIZED, "You can't do this.");
 
         return userMapper.toDto(user.getCustomer());
     }
@@ -45,6 +45,8 @@ public class CustomerServiceImpl implements CustomerService {
     @Override
     public List<ProductResponse> getFavorites(String token) {
         User user = authService.getUserFromToken(token);
+        if (user.getRole() != Role.CUSTOMER)
+            throw new BadRequestException(HttpStatus.UNAUTHORIZED, "You can't do this.");
         Customer customer = user.getCustomer();
         return productMapper.toDtoS(customer.getFavoritesList() != null ? customer.getFavoritesList() : new ArrayList<>());
     }

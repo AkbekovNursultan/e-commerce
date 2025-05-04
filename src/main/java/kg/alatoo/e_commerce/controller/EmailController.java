@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/email")
+@RequestMapping("/api/email")
 public class EmailController {
 
     private final EmailService emailService;

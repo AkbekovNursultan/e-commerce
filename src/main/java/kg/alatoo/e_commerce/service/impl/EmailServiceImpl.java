@@ -23,7 +23,7 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
     private final JavaMailSender mailSender;
-    private final String link = "http://localhost:8080/email/verify/";
+    private final String link = "http://localhost:8080/api/email/verify/";
     private final UserRepository userRepository;
     private final AuthenticationManager authenticationManager;
 
