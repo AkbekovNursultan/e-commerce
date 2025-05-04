@@ -3,10 +3,13 @@ package kg.alatoo.e_commerce.exception;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.stream.Collectors;
 
 @Order(Ordered.HIGHEST_PRECEDENCE)
 @ControllerAdvice
@@ -45,4 +48,25 @@ public class GlobalExceptionHandler {
         return new ExceptionResponse(HttpStatus.FORBIDDEN, e.getMessage());
     }
 
+    @ExceptionHandler(TokenExpiredException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ExceptionResponse handleTokenExpired(TokenExpiredException ex) {
+        return new ExceptionResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(RuntimeException.class)
+    public ExceptionResponse handleGenericRuntime(RuntimeException ex) {
+        return new ExceptionResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ExceptionResponse handleValidationExceptions(MethodArgumentNotValidException ex) {
+        String errorMsg = ex.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        return new ExceptionResponse(HttpStatus.BAD_REQUEST, errorMsg);
+    }
 }

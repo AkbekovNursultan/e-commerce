@@ -1,5 +1,8 @@
 package kg.alatoo.e_commerce.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -26,17 +29,32 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
+    @Operation(summary = "Register a new user", description = "Create a new user with registration details")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User created successfully"),
+            @ApiResponse(responseCode = "400", description = "Bad Request if registration details are invalid")
+    })
     public ResponseEntity<String> register(@Valid @RequestBody UserRegisterRequest userRegisterRequest) {
         authService.register(userRegisterRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body("User added successfully!\nPlease, verify your email");
     }
 
     @PostMapping("/login-basic")
+    @Operation(summary = "Login user", description = "Authenticate user with username and password")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login successful"),
+            @ApiResponse(responseCode = "403", description = "Invalid credentials")
+    })
     public ResponseEntity<UserLoginResponse> login(@Valid @RequestBody UserLoginRequest userLoginRequest) {
         return ResponseEntity.ok(authService.login(userLoginRequest));
     }
 
     @PostMapping("/refresh-token")
+    @Operation(summary = "Refresh access token", description = "Generate a new access token using a valid refresh token")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "New tokens will be provided"),
+            @ApiResponse(responseCode = "401", description = "Refresh token is missing or invalid")
+    })
     public void refresh(
             HttpServletRequest request,
             HttpServletResponse response
@@ -50,9 +68,10 @@ public class AuthController {
         return ResponseEntity.ok(new UserLoginResponse(token, refreshToken));
     }
 
-    @GetMapping("/error")
-    public ResponseEntity.BodyBuilder handleError() {
-        return ResponseEntity.badRequest();
-    }
-
 }
+
+
+//    @GetMapping("/error")
+//    public ResponseEntity.BodyBuilder handleError() {
+//        return ResponseEntity.badRequest();
+//    }

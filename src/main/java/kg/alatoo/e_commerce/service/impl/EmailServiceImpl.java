@@ -29,12 +29,16 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void sendVerificationLink(String email, String code) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(email);
-        message.setFrom("nursultan20052003@gmail.com");
-        message.setSubject("Verify your account");
-        message.setText("\n\n" + link + code + "\n\n" + "This is the link for verifying your account.");
-        mailSender.send(message);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(email);
+            message.setFrom("nursultan20052003@gmail.com");
+            message.setSubject("Verify your account");
+            message.setText("\n\n" + link + code + "\n\n" + "This is the link for verifying your account.");
+            mailSender.send(message);
+        } catch (Exception e) {
+            throw new CustomBadCredentialsException("Problem in '.properties'. " + e.getMessage());
+        }
     }
 
     @Override

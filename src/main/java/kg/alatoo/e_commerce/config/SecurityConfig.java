@@ -1,5 +1,6 @@
 package kg.alatoo.e_commerce.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import kg.alatoo.e_commerce.repository.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,8 +30,9 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/register", "/error", "/login", "/login-success", "/h2-console/**", "/oauth2/**", "/login/oauth2/**", "/refresh-token").permitAll()
-                        .anyRequest().authenticated() // Secure other endpoints
+                        .requestMatchers("/register", "/error", "/login-basic", "/login-success", "/email/**", "/h2-console/**",
+                                "/oauth2/**", "/login/oauth2/**", "/refresh-token", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .logout(logout -> logout.permitAll())
@@ -43,7 +45,13 @@ public class SecurityConfig {
                         )
                         .successHandler(oAuth2AuthenticationSuccessHandler)
                 )
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling()
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.getWriter().write("\"message\": \"Token is missing or invalid.\"");
+                });
         return http.build();
     }
 
